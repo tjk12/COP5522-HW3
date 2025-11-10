@@ -6,6 +6,11 @@ UNAME := $(shell uname)
 # Allow environment overrides: e.g. `make CXX=mpic++ CXXFLAGS="-O3 -std=c++17"`
 CXX ?= mpic++
 
+## Ensure mpic++ is available; fail fast with a helpful message if not.
+ifeq ($(shell which mpic++ 2>/dev/null),)
+	$(error "mpic++ not found in PATH. Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure mpic++ is on PATH, or set CXX to the MPI wrapper explicitly.")
+endif
+
 ifeq ($(UNAME), Darwin)
 	# macOS: avoid -march=native (clang may not support it); keep optimization flags
 	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops
