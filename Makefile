@@ -9,17 +9,17 @@ CXX ?= mpic++
 # Auto-detect MPI compiler wrapper only when CXX was not set externally
 ifeq ($(origin CXX), default)
 ifneq ($(shell which mpic++ 2>/dev/null),)
-	CXX := mpic++
+CXX := mpic++
 else
-	ifneq ($(shell which mpicxx 2>/dev/null),)
-		CXX := mpicxx
-	else
-		ifneq ($(shell which mpicc 2>/dev/null),)
-			CXX := mpicc
-		else
-			$(error "No MPI compiler wrapper found (mpic++/mpicxx/mpicc). Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure a wrapper is on PATH, or set CXX in the environment.")
-		endif
-	endif
+ifneq ($(shell which mpicxx 2>/dev/null),)
+CXX := mpicxx
+else
+ifneq ($(shell which mpicc 2>/dev/null),)
+CXX := mpicc
+else
+$(error "No MPI compiler wrapper found (mpic++/mpicxx/mpicc). Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure a wrapper is on PATH, or set CXX in the environment.")
+endif
+endif
 endif
 endif
 
