@@ -6,9 +6,21 @@ UNAME := $(shell uname)
 # Allow environment overrides: e.g. `make CXX=mpic++ CXXFLAGS="-O3 -std=c++17"`
 CXX ?= mpic++
 
-## Ensure mpic++ is available; fail fast with a helpful message if not.
-ifeq ($(shell which mpic++ 2>/dev/null),)
-	$(error "mpic++ not found in PATH. Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure mpic++ is on PATH, or set CXX to the MPI wrapper explicitly.")
+# Auto-detect MPI compiler wrapper only when CXX was not set externally
+ifeq ($(origin CXX), default)
+ifneq ($(shell which mpic++ 2>/dev/null),)
+	CXX := mpic++
+else
+	ifneq ($(shell which mpicxx 2>/dev/null),)
+		CXX := mpicxx
+	else
+		ifneq ($(shell which mpicc 2>/dev/null),)
+			CXX := mpicc
+		else
+			$(error "No MPI compiler wrapper found (mpic++/mpicxx/mpicc). Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure a wrapper is on PATH, or set CXX in the environment.")
+		endif
+	endif
+endif
 endif
 
 ifeq ($(UNAME), Darwin)
