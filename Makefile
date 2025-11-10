@@ -113,4 +113,11 @@ check-env:
 	@echo "OMP_FLAGS: $(OMP_FLAGS)"
 	@echo "mpirun version:"; mpirun --version || mpirun -h || true
 
+# Helper: try to load a common OpenMPI module used on this cluster
+# This runs in a login shell so `module` is available if provided by the environment.
+.PHONY: setup-mpi
+setup-mpi:
+	@echo "Trying to load mpi/openmpi-x86_64 module (may require module command)..."
+	@bash -lc "module load mpi/openmpi-x86_64 >/dev/null 2>&1 && echo 'module mpi/openmpi-x86_64 loaded' || echo 'module load failed — run: module load mpi/openmpi-x86_64'"
+
 .PHONY: all openmp test test-openmp perf clean cleanall help
