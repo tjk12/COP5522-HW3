@@ -25,10 +25,12 @@ endif
 
 ifeq ($(UNAME), Darwin)
 	# macOS: avoid -march=native (clang may not support it); keep optimization flags
-	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops
+	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops -DUSE_ACCELERATE
+	MPI_LIBS ?= -framework Accelerate
 else
 	# Linux: enable -march=native for best CPU-specific codegen
 	CXXFLAGS ?= -O3 -march=native -std=c++11 -ffast-math -funroll-loops
+	MPI_LIBS ?=
 endif
 
 # OpenMP compiler for comparison version
@@ -51,7 +53,7 @@ all: $(TARGET)
 
 # MPI version
 $(TARGET): $(MPI_SRC)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(MPI_SRC)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(MPI_SRC) $(MPI_LIBS)
 
 # OpenMP version
 openmp: $(OMP_TARGET)

@@ -7,6 +7,16 @@
 #include <vector>
 #include <algorithm>
 
+#if defined(USE_ACCELERATE)
+#include <Accelerate/Accelerate.h>
+#endif
+
+#if defined(__AVX2__)
+#include <immintrin.h>
+#elif defined(__ARM_NEON)
+#include <arm_neon.h>
+#endif
+
 using namespace std;
 
 double microtime() {
@@ -39,27 +49,117 @@ void InitMatrix(Matrix A, int Rows, int Cols) {
 // Optimized matrix-vector multiplication for local rows
 void MatVecMultLocal(Matrix A, Matrix B, Matrix C, int ARows, int ACols) {
     // Compute local matrix-vector product (row-major, cache-friendly)
-    memset(C, 0, ARows * sizeof(float));
-
+#if defined(USE_ACCELERATE)
     for (int i = 0; i < ARows; ++i) {
         const float *row = &A[i * ACols];
-        float sum0 = 0.0f;
+        C[i] = cblas_sdot(ACols, row, 1, B, 1);
+    }
+#elif defined(__AVX2__)
+    for (int i = 0; i < ARows; ++i) {
+        const float *row = &A[i * ACols];
+        __m256 vsum0 = _mm256_setzero_ps();
+        __m256 vsum1 = _mm256_setzero_ps();
 
         int k = 0;
-        int limit = ACols - (ACols % 4);
-        // Unroll by 4 to help the compiler vectorize
-        for (; k < limit; k += 4) {
-            sum0 += row[k] * B[k];
-            sum0 += row[k+1] * B[k+1];
-            sum0 += row[k+2] * B[k+2];
-            sum0 += row[k+3] * B[k+3];
+        int limit = ACols - (ACols % 16);
+        for (; k < limit; k += 16) {
+            __m256 va0 = _mm256_loadu_ps(row + k);
+            __m256 vb0 = _mm256_loadu_ps(B + k);
+#if defined(__FMA__)
+            vsum0 = _mm256_fmadd_ps(va0, vb0, vsum0);
+#else
+            vsum0 = _mm256_add_ps(vsum0, _mm256_mul_ps(va0, vb0));
+#endif
+
+            __m256 va1 = _mm256_loadu_ps(row + k + 8);
+            __m256 vb1 = _mm256_loadu_ps(B + k + 8);
+#if defined(__FMA__)
+            vsum1 = _mm256_fmadd_ps(va1, vb1, vsum1);
+#else
+            vsum1 = _mm256_add_ps(vsum1, _mm256_mul_ps(va1, vb1));
+#endif
         }
+
+        __m256 vsum = _mm256_add_ps(vsum0, vsum1);
+
+        for (; k <= ACols - 8; k += 8) {
+            __m256 va = _mm256_loadu_ps(row + k);
+            __m256 vb = _mm256_loadu_ps(B + k);
+#if defined(__FMA__)
+            vsum = _mm256_fmadd_ps(va, vb, vsum);
+#else
+            vsum = _mm256_add_ps(vsum, _mm256_mul_ps(va, vb));
+#endif
+        }
+
+        __m128 low = _mm256_castps256_ps128(vsum);
+        __m128 high = _mm256_extractf128_ps(vsum, 1);
+        __m128 sum128 = _mm_add_ps(low, high);
+        sum128 = _mm_hadd_ps(sum128, sum128);
+        sum128 = _mm_hadd_ps(sum128, sum128);
+        float sum0 = _mm_cvtss_f32(sum128);
+
         for (; k < ACols; ++k) {
             sum0 += row[k] * B[k];
         }
 
         C[i] = sum0;
     }
+#elif defined(__ARM_NEON)
+    for (int i = 0; i < ARows; ++i) {
+        const float *row = &A[i * ACols];
+        float32x4_t vsum0 = vdupq_n_f32(0.0f);
+        float32x4_t vsum1 = vdupq_n_f32(0.0f);
+
+        int k = 0;
+        int limit = ACols - (ACols % 8);
+        for (; k < limit; k += 8) {
+            float32x4_t va0 = vld1q_f32(row + k);
+            float32x4_t vb0 = vld1q_f32(B + k);
+            vsum0 = vmlaq_f32(vsum0, va0, vb0);
+
+            float32x4_t va1 = vld1q_f32(row + k + 4);
+            float32x4_t vb1 = vld1q_f32(B + k + 4);
+            vsum1 = vmlaq_f32(vsum1, va1, vb1);
+        }
+
+        float32x4_t vsum = vaddq_f32(vsum0, vsum1);
+        float sum0 = vaddvq_f32(vsum);
+
+        for (; k < ACols; ++k) {
+            sum0 += row[k] * B[k];
+        }
+
+        C[i] = sum0;
+    }
+#else
+    for (int i = 0; i < ARows; ++i) {
+        const float *row = &A[i * ACols];
+        float sum0 = 0.0f;
+
+        int k = 0;
+        int limit = ACols - (ACols % 8);
+        float sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+        for (; k < limit; k += 8) {
+            sum0 += row[k] * B[k];
+            sum1 += row[k + 1] * B[k + 1];
+            sum2 += row[k + 2] * B[k + 2];
+            sum3 += row[k + 3] * B[k + 3];
+            sum0 += row[k + 4] * B[k + 4];
+            sum1 += row[k + 5] * B[k + 5];
+            sum2 += row[k + 6] * B[k + 6];
+            sum3 += row[k + 7] * B[k + 7];
+        }
+
+        sum0 += sum1 + sum2 + sum3;
+
+        for (; k < ACols; ++k) {
+            sum0 += row[k] * B[k];
+        }
+
+        C[i] = sum0;
+    }
+#endif
 }
 
 int main(int argc, char **argv) {
@@ -118,8 +218,8 @@ int main(int argc, char **argv) {
     
     // Initialize local portion of matrix A
     for (int i = 0; i < local_rows; i++) {
+        int global_row = offset + i;
         for (int j = 0; j < M; j++) {
-            int global_row = offset + i;
             A_local[i * M + j] = 1.0f / (global_row + j + 2);
         }
     }
