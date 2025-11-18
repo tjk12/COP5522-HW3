@@ -7,10 +7,6 @@
 #include <vector>
 #include <algorithm>
 
-#if defined(USE_ACCELERATE)
-#include <Accelerate/Accelerate.h>
-#endif
-
 #if defined(__AVX2__)
 #include <immintrin.h>
 #elif defined(__ARM_NEON)
@@ -47,14 +43,10 @@ void InitMatrix(Matrix A, int Rows, int Cols) {
 }
 
 // Optimized matrix-vector multiplication for local rows
+// Prioritizes AVX2/FMA path for Linux x86-64 systems
 void MatVecMultLocal(Matrix A, Matrix B, Matrix C, int ARows, int ACols) {
     // Compute local matrix-vector product (row-major, cache-friendly)
-#if defined(USE_ACCELERATE)
-    for (int i = 0; i < ARows; ++i) {
-        const float *row = &A[i * ACols];
-        C[i] = cblas_sdot(ACols, row, 1, B, 1);
-    }
-#elif defined(__AVX2__)
+#if defined(__AVX2__)
     for (int i = 0; i < ARows; ++i) {
         const float *row = &A[i * ACols];
         __m256 vsum0 = _mm256_setzero_ps();
@@ -165,12 +157,21 @@ void MatVecMultLocal(Matrix A, Matrix B, Matrix C, int ARows, int ACols) {
 int main(int argc, char **argv) {
     int rank, size;
     int N, M, P = 1;
+    int expected_procs = 0;
     Matrix A_local, B, C_local, C_global = nullptr;
     double time_start, time_end;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    
+    // Check for command line argument specifying number of processes
+    if (argc > 1) {
+        expected_procs = atoi(argv[1]);
+        if (rank == 0 && expected_procs != size) {
+            cerr << "Warning: Expected " << expected_procs << " processes (from command line), but running with " << size << " processes" << endl;
+        }
+    }
     
     // Create user-defined datatype for matrix size (practice as required)
     MPI_Datatype matrix_size_type;
@@ -216,7 +217,7 @@ int main(int argc, char **argv) {
     B = CreateMatrix(M);
     C_local = CreateMatrix(local_rows);
     
-    // Initialize local portion of matrix A
+    // Initialize local portion of matrix A (row-major)
     for (int i = 0; i < local_rows; i++) {
         int global_row = offset + i;
         for (int j = 0; j < M; j++) {

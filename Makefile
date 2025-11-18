@@ -24,12 +24,12 @@ endif
 endif
 
 ifeq ($(UNAME), Darwin)
-	# macOS: avoid -march=native (clang may not support it); keep optimization flags
-	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops -DUSE_ACCELERATE
-	MPI_LIBS ?= -framework Accelerate
+	# macOS: basic optimization (Accelerate removed - use intrinsics instead)
+	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops
+	MPI_LIBS ?=
 else
-	# Linux: enable -march=native for best CPU-specific codegen
-	CXXFLAGS ?= -O3 -march=native -std=c++11 -ffast-math -funroll-loops
+	# Linux: enable aggressive optimizations with AVX2/FMA for best performance
+	CXXFLAGS ?= -O3 -march=native -mavx2 -mfma -std=c++11 -ffast-math -funroll-loops -ftree-vectorize
 	MPI_LIBS ?=
 endif
 
