@@ -21,7 +21,7 @@ except ImportError as e:
     print("  For Python 3.6: pip3 install --user 'fpdf2<2.6.0' matplotlib")
     print("  For Python 3.7+: pip3 install --user fpdf2 matplotlib")
     print("  Or use: pip3 install --user -r requirements.txt")
-    exit(1)
+    #exit(1)
 
 # --- Configuration ---
 STRONG_CSV = "strong_scaling_results.csv"
