@@ -161,7 +161,16 @@ if python3 report.py; then
 else
     echo -e "${RED}✗ Report generation failed!${NC}"
     echo -e "${YELLOW}Make sure Python dependencies are installed:${NC}"
-    echo -e "${YELLOW}  pip3 install fpdf2 matplotlib pandas numpy${NC}"
+    
+    # Check Python version and provide appropriate install command
+    py_version=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.6")
+    if [[ "$py_version" == "3.6" ]]; then
+        echo -e "${YELLOW}  For Python 3.6:${NC}"
+        echo -e "${YELLOW}  pip3 install --user 'fpdf2<2.6.0' matplotlib pandas numpy${NC}"
+    else
+        echo -e "${YELLOW}  pip3 install --user fpdf2 matplotlib pandas numpy${NC}"
+    fi
+    echo -e "${YELLOW}  Or use: pip3 install --user -r requirements.txt${NC}"
     exit 1
 fi
 

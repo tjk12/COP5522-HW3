@@ -17,7 +17,10 @@ try:
     from fpdf import FPDF
 except ImportError as e:
     print(f"Error: Missing required library: {e}")
-    print("Please install: pip install fpdf2 matplotlib")
+    print("Please install dependencies:")
+    print("  For Python 3.6: pip3 install --user 'fpdf2<2.6.0' matplotlib")
+    print("  For Python 3.7+: pip3 install --user fpdf2 matplotlib")
+    print("  Or use: pip3 install --user -r requirements.txt")
     exit(1)
 
 # --- Configuration ---

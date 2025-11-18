@@ -1,4 +1,18 @@
-numpy
-pandas
-matplotlib
-fpdf2
+# Python package requirements for HW3 report generation
+# Compatible with Python 3.6+
+
+# Version constraints for Python 3.6 (avoid compilation issues)
+numpy>=1.16.0,<1.20; python_version < '3.7'
+numpy>=1.16.0; python_version >= '3.7'
+
+pandas>=0.24.0,<1.2; python_version < '3.7'
+pandas>=0.24.0; python_version >= '3.7'
+
+matplotlib>=3.0.0,<3.4; python_version < '3.7'
+matplotlib>=3.0.0; python_version >= '3.7'
+
+# fpdf2 version depends on Python version
+# Python 3.6: use fpdf2<2.6.0 (requires fonttools<4.34.0)
+# Python 3.7+: use fpdf2>=2.0.0
+fpdf2>=2.0.0; python_version >= '3.7'
+fpdf2<2.6.0; python_version < '3.7'
