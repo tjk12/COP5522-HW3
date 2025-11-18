@@ -12,6 +12,20 @@ This code is optimized for Linux HPC environments:
 
 ## Building on Linux HPC Clusters
 
+### Quick Setup (Department Server)
+If you get an MPI compiler error, run the setup script:
+```bash
+source setup-mpi.sh
+make
+```
+
+Or manually find and load MPI:
+```bash
+make find-mpi          # See available MPI modules
+module load mpi/openmpi-x86_64  # Load the module
+make                   # Build
+```
+
 ### Basic Build
 ```bash
 make

@@ -17,7 +17,14 @@ else
 ifneq ($(shell which mpicc 2>/dev/null),)
 CXX := mpicc
 else
-$(error "No MPI compiler wrapper found (mpic++/mpicxx/mpicc). Install OpenMPI/MPICH or load the MPI module (e.g. 'module load openmpi') and ensure a wrapper is on PATH, or set CXX in the environment.")
+$(info ========================================)
+$(info MPI compiler not found in PATH!)
+$(info Try one of these solutions:)
+$(info   1. Load MPI module: module load mpi/openmpi-x86_64)
+$(info   2. Or try: module avail mpi)
+$(info   3. Then run 'make' again)
+$(info ========================================)
+$(error MPI compiler wrapper not found. See instructions above.)
 endif
 endif
 endif
@@ -96,14 +103,17 @@ help:
 	@echo "  test       - Run quick test with 4 processes"
 	@echo "  test-openmp - Run OpenMP test with 4 threads"
 	@echo "  perf       - Run basic performance tests"
+	@echo "  find-mpi   - Search for available MPI modules"
 	@echo "  clean      - Remove executables"
 	@echo "  cleanall   - Remove executables and results"
 	@echo "  help       - Show this help message"
 	@echo ""
 	@echo "Example usage:"
-	@echo "  make                    # Build MPI version"
+	@echo "  make find-mpi          # Find available MPI modules"
+	@echo "  module load mpi/...    # Load MPI module"
+	@echo "  make                   # Build MPI version"
 	@echo "  make test              # Test with 4 processes"
-	@echo "  mpirun -np 8 ./hw3    # Run with 8 processes"
+	@echo "  mpirun -np 8 ./hw3     # Run with 8 processes"
 
 # Environment diagnostic target
 .PHONY: check-env
@@ -115,11 +125,18 @@ check-env:
 	@echo "OMP_FLAGS: $(OMP_FLAGS)"
 	@echo "mpirun version:"; mpirun --version || mpirun -h || true
 
-# Helper: try to load a common OpenMPI module used on this cluster
-# This runs in a login shell so `module` is available if provided by the environment.
-.PHONY: setup-mpi
-setup-mpi:
-	@echo "Trying to load mpi/openmpi-x86_64 module (may require module command)..."
-	@bash -lc "module load mpi/openmpi-x86_64 >/dev/null 2>&1 && echo 'module mpi/openmpi-x86_64 loaded' || echo 'module load failed — run: module load mpi/openmpi-x86_64'"
+# Helper: detect and show available MPI modules
+.PHONY: find-mpi
+find-mpi:
+	@echo "=== Searching for MPI modules ==="
+	@echo "Available MPI modules:"
+	@module avail mpi 2>&1 | grep -i mpi || echo "No MPI modules found with 'module avail mpi'"
+	@echo ""
+	@echo "Available OpenMPI modules:"
+	@module avail openmpi 2>&1 | grep -i openmpi || echo "No OpenMPI modules found"
+	@echo ""
+	@echo "To load a module, run:"
+	@echo "  module load <module-name>"
+	@echo "  make"
 
 .PHONY: all openmp test test-openmp perf clean cleanall help
