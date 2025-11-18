@@ -1,2 +1,5 @@
 *instructions.md
-.venv/*
+.venv/lib/*
+.venv/Scripts/*
+.venv/Include/*
+.venv/pyvenv.cfg
