@@ -15,13 +15,16 @@ try:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from fpdf import FPDF
+    HAS_DEPS = True
 except ImportError as e:
     print(f"Error: Missing required library: {e}")
     print("Please install dependencies:")
     print("  For Python 3.6: pip3 install --user 'fpdf2<2.6.0' matplotlib")
     print("  For Python 3.7+: pip3 install --user fpdf2 matplotlib")
     print("  Or use: pip3 install --user -r requirements.txt")
-    #exit(1)
+    HAS_DEPS = False
+    plt = None
+    FPDF = None
 
 # --- Configuration ---
 STRONG_CSV = "strong_scaling_results.csv"
@@ -34,7 +37,7 @@ CHART_WEAK_SINGLE = "weak_scaling_single_node.png"
 CHART_WEAK_MULTI = "weak_scaling_multi_node.png"
 
 # Threshold for single-node vs multi-node (processes per node)
-SINGLE_NODE_MAX_PROCS = 4  # Assume 4 cores per node
+SINGLE_NODE_MAX_PROCS = 8  # Tested up to 8 cores on single node
 
 def load_csv_data(filename, is_weak=False):
     """Load CSV data from benchmark results"""
@@ -558,39 +561,49 @@ def generate_report(strong_data, weak_data, openmp_data=None):
     
     # Calculate actual metrics from strong_data
     if strong_data:
-        # Find best speedups for different sizes
-        n1000_best = max([r['speedup'] for r in strong_data if r['size'] == 1000], default=0)
-        n2000_best = max([r['speedup'] for r in strong_data if r['size'] == 2000], default=0)
-        n4000_best = max([r['speedup'] for r in strong_data if r['size'] == 4000], default=0)
-        n8000_best = max([r['speedup'] for r in strong_data if r['size'] == 8000], default=0)
+        # Find max process count tested
+        max_procs_tested = max([r['procs'] for r in strong_data])
         
-        # Find 4-process speedups
+        # Find best speedups for different sizes (and which process count achieved it)
+        n1000_results = [(r['procs'], r['speedup']) for r in strong_data if r['size'] == 1000]
+        n2000_results = [(r['procs'], r['speedup']) for r in strong_data if r['size'] == 2000]
+        n4000_results = [(r['procs'], r['speedup']) for r in strong_data if r['size'] == 4000]
+        n8000_results = [(r['procs'], r['speedup']) for r in strong_data if r['size'] == 8000]
+        
+        n1000_best_procs, n1000_best = max(n1000_results, key=lambda x: x[1], default=(0, 0))
+        n2000_best_procs, n2000_best = max(n2000_results, key=lambda x: x[1], default=(0, 0))
+        n4000_best_procs, n4000_best = max(n4000_results, key=lambda x: x[1], default=(0, 0))
+        n8000_best_procs, n8000_best = max(n8000_results, key=lambda x: x[1], default=(0, 0))
+        
+        # Find 4-process speedups for comparison
         n4000_4proc = next((r['speedup'] for r in strong_data if r['size'] == 4000 and r['procs'] == 4), 0)
         n8000_4proc = next((r['speedup'] for r in strong_data if r['size'] == 8000 and r['procs'] == 4), 0)
         
         pdf.multi_cell(0, 5,
-            f"Strong Scaling Analysis (Actual Results):\n"
-            f"- N=1000: Peak speedup {n1000_best:.2f}x on 4 cores, but performance degrades with larger matrices\n"
-            f"- N=2000: Peak speedup {n2000_best:.2f}x showing modest parallel benefit\n"
-            f"- N=4000: Achieved {n4000_4proc:.2f}x speedup on 4 cores ({n4000_4proc/4*100:.1f}% efficiency)\n"
-            f"- N=8000: Achieved {n8000_4proc:.2f}x speedup on 4 cores ({n8000_4proc/4*100:.1f}% efficiency)\n\n"
-            "Observation: Small matrices (N=1000) show super-linear speedup due to improved cache utilization when "
-            "the problem is divided. However, larger matrices suffer from memory bandwidth saturation, with performance "
-            "actually degrading when using 4 cores for N>=4000. This indicates the code is memory-bound rather than compute-bound.")
+            f"Strong Scaling Analysis (Tested 1-{max_procs_tested} cores):\n"
+            f"- N=1000: Peak speedup {n1000_best:.2f}x on {n1000_best_procs} cores ({n1000_best/n1000_best_procs*100:.1f}% efficiency)\n"
+            f"- N=2000: Peak speedup {n2000_best:.2f}x on {n2000_best_procs} cores ({n2000_best/n2000_best_procs*100:.1f}% efficiency)\n"
+            f"- N=4000: Peak speedup {n4000_best:.2f}x on {n4000_best_procs} cores ({n4000_best/n4000_best_procs*100:.1f}% efficiency)\n"
+            f"- N=8000: Peak speedup {n8000_best:.2f}x on {n8000_best_procs} cores ({n8000_best/n8000_best_procs*100:.1f}% efficiency)\n\n"
+            "Observation: Scaling behavior varies significantly with problem size. Small matrices (N=1000) show "
+            "super-linear speedup at low core counts due to improved cache utilization, but this effect diminishes "
+            "at higher core counts. Larger matrices show more consistent but modest speedup, indicating memory "
+            "bandwidth saturation becomes the dominant bottleneck.")
     
     pdf.ln(4)
     
     # Weak scaling analysis
     if weak_data:
         base_perf = weak_data[0]['gflops'] if weak_data else 0
-        weak_4proc = next((r['gflops'] for r in weak_data if r['procs'] == 4), 0)
-        weak_efficiency = (weak_4proc / base_perf) if base_perf > 0 else 0
+        max_weak_procs = max([r['procs'] for r in weak_data])
+        max_weak_perf = next((r['gflops'] for r in weak_data if r['procs'] == max_weak_procs), 0)
+        max_weak_efficiency = (max_weak_perf / base_perf) if base_perf > 0 else 0
         
         pdf.multi_cell(0, 5,
             f"Weak Scaling Analysis (Actual Results):\n"
-            f"- 1 process (N=1000): {base_perf:.2f} Gflop/s baseline\n"
-            f"- 4 processes (N=2000): {weak_4proc:.2f} Gflop/s ({weak_efficiency:.2f}x parallel efficiency)\n\n"
-            f"Observation: Weak scaling shows {weak_efficiency*100:.1f}% efficiency at 4 cores, indicating excellent "
+            f"- 1 process: {base_perf:.2f} Gflop/s baseline\n"
+            f"- {max_weak_procs} processes: {max_weak_perf:.2f} Gflop/s ({max_weak_efficiency:.2f}x parallel efficiency)\n\n"
+            f"Observation: Weak scaling shows {max_weak_efficiency*100:.1f}% efficiency at {max_weak_procs} cores, indicating excellent "
             "scaling when work per process is held constant. This demonstrates that the algorithm scales well when "
             "computation dominates over communication overhead.")
     
@@ -600,19 +613,25 @@ def generate_report(strong_data, weak_data, openmp_data=None):
     pdf.set_font("Helvetica", size=10)
     
     if strong_data:
-        # Calculate actual breakeven points
+        # Calculate actual breakeven points from data
         n1000_2proc_speedup = next((r['speedup'] for r in strong_data if r['size'] == 1000 and r['procs'] == 2), 0)
         n2000_2proc_speedup = next((r['speedup'] for r in strong_data if r['size'] == 2000 and r['procs'] == 2), 0)
+        n4000_2proc_speedup = next((r['speedup'] for r in strong_data if r['size'] == 4000 and r['procs'] == 2), 0)
+        n8000_2proc_speedup = next((r['speedup'] for r in strong_data if r['size'] == 8000 and r['procs'] == 2), 0)
+        
+        # Find where efficiency per core drops below 50%
+        max_procs = max([r['procs'] for r in strong_data])
         
         pdf.multi_cell(0, 5,
             f"Based on measured performance:\n"
-            f"- N=1000: {n1000_2proc_speedup:.2f}x speedup on 2 cores - parallelism beneficial due to cache effects\n"
-            f"- N=2000: {n2000_2proc_speedup:.2f}x speedup on 2 cores - worthwhile with 2 processes\n"
-            f"- N>=4000: Memory bandwidth saturation limits scaling - 2 cores more efficient than 4\n\n"
-            "Conclusion: For this memory-bound workload, using 2 processes provides consistent benefit across all "
-            "problem sizes. Using 4 processes shows diminishing returns and can degrade performance for large matrices "
-            "due to memory bandwidth contention. Parallelism is always worthwhile with 2 cores (1.8-2.9x speedup), "
-            "but careful profiling is needed beyond that.")
+            f"- N=1000: {n1000_2proc_speedup:.2f}x speedup on 2 cores - excellent cache effects\n"
+            f"- N=2000: {n2000_2proc_speedup:.2f}x speedup on 2 cores - near-ideal scaling\n"
+            f"- N=4000: {n4000_2proc_speedup:.2f}x speedup on 2 cores - good parallel efficiency\n"
+            f"- N=8000: {n8000_2proc_speedup:.2f}x speedup on 2 cores - memory bandwidth emerging as bottleneck\n\n"
+            f"Conclusion: For this memory-bound workload tested up to {max_procs} cores, parallelism provides consistent "
+            "benefit at low core counts (2-4 cores) across all problem sizes. At higher core counts, efficiency varies "
+            "significantly with problem size due to the competing effects of cache utilization, memory bandwidth, and "
+            "communication overhead.")
     
     pdf.ln(4)
     pdf.set_font("Helvetica", "B", 12)
@@ -620,17 +639,27 @@ def generate_report(strong_data, weak_data, openmp_data=None):
     pdf.set_font("Helvetica", size=10)
     
     if openmp_data and strong_data:
-        # Compare performance at 4 cores/threads
-        mpi_4000_4p = next((r['gflops'] for r in strong_data if r['size'] == 4000 and r['procs'] == 4), 0)
-        omp_4000_4t = next((r['gflops'] for r in openmp_data if r['size'] == 4000 and r['threads'] == 4), 0)
-        mpi_8000_4p = next((r['gflops'] for r in strong_data if r['size'] == 8000 and r['procs'] == 4), 0)
-        omp_8000_4t = next((r['gflops'] for r in openmp_data if r['size'] == 8000 and r['threads'] == 4), 0)
+        # Find common core counts between MPI and OpenMP
+        mpi_procs = set(r['procs'] for r in strong_data)
+        omp_threads = set(r['threads'] for r in openmp_data)
+        common_counts = sorted(mpi_procs & omp_threads)
+        
+        # Compare at multiple core counts for N=4000
+        comparisons = []
+        for count in common_counts:
+            mpi_perf = next((r['gflops'] for r in strong_data if r['size'] == 4000 and r['procs'] == count), None)
+            omp_perf = next((r['gflops'] for r in openmp_data if r['size'] == 4000 and r['threads'] == count), None)
+            if mpi_perf and omp_perf:
+                comparisons.append((count, mpi_perf, omp_perf))
+        
+        comparison_text = "Performance comparison at N=4000 (Gflop/s):\n"
+        for count, mpi_perf, omp_perf in comparisons:
+            ratio = omp_perf / mpi_perf if mpi_perf > 0 else 0
+            comparison_text += f"- {count} cores: MPI={mpi_perf:.2f}, OpenMP={omp_perf:.2f} (OpenMP {ratio:.2f}x faster)\n"
         
         pdf.multi_cell(0, 5,
-            f"Performance at 4 cores (Gflop/s):\n"
-            f"- N=4000: MPI={mpi_4000_4p:.2f}, OpenMP={omp_4000_4t:.2f} (OpenMP {omp_4000_4t/mpi_4000_4p:.2f}x faster)\n"
-            f"- N=8000: MPI={mpi_8000_4p:.2f}, OpenMP={omp_8000_4t:.2f} (OpenMP {omp_8000_4t/mpi_8000_4p:.2f}x faster)\n\n"
-            "Key Insight: OpenMP significantly outperforms MPI on single-node workloads due to shared-memory access "
+            comparison_text + "\n"
+            "Key Insight: OpenMP consistently outperforms MPI on single-node workloads due to shared-memory access "
             "with zero-copy overhead. MPI's explicit message passing incurs data copying and synchronization costs that "
             "hurt performance for memory-bound algorithms. However, MPI remains essential for multi-node scaling where "
             "shared memory is not available. For production HPC workloads, a hybrid MPI+OpenMP approach often works best: "
@@ -640,16 +669,27 @@ def generate_report(strong_data, weak_data, openmp_data=None):
     pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Multi-Node Scaling Projections", ln=True)
     pdf.set_font("Helvetica", size=10)
-    pdf.multi_cell(0, 5,
-        "Based on single-node efficiency and communication models:\n\n"
-        "Current state: 4 cores on 1 node achieve 0.4-2.9x speedup (varies by problem size)\n\n"
-        "Multi-node expectations:\n"
-        "- 2 nodes (8 cores): Network latency (~1-5 microseconds) + bandwidth limits will reduce efficiency by 20-40%\n"
-        "- 4 nodes (16 cores): Communication overhead becomes dominant; expect 50-70% efficiency loss\n"
-        "- 5 nodes (20 cores): Unlikely to show benefit beyond 4 nodes for these problem sizes\n\n"
-        "Fundamental limitation: Matrix-vector multiplication has O(N^2) computation but O(N) communication per process. "
-        "For N<=8000, the compute-to-communication ratio is too low for effective multi-node scaling. Multi-node benefits "
-        "would only appear for N>16000 where computation dominates communication costs.")
+    
+    # Calculate actual single-node performance range
+    if strong_data:
+        max_procs = max([r['procs'] for r in strong_data])
+        speedups_at_max = [r['speedup'] for r in strong_data if r['procs'] == max_procs]
+        min_speedup = min(speedups_at_max) if speedups_at_max else 0
+        max_speedup = max(speedups_at_max) if speedups_at_max else 0
+        
+        pdf.multi_cell(0, 5,
+            f"Based on single-node efficiency and communication models:\n\n"
+            f"Current state: {max_procs} cores on 1 node achieve {min_speedup:.1f}-{max_speedup:.1f}x speedup (varies by problem size)\n\n"
+            f"Multi-node expectations:\n"
+            f"- 2 nodes ({max_procs*2} cores): Network latency (~1-5 microseconds) + bandwidth limits will reduce efficiency by 20-40%\n"
+            f"- 4 nodes ({max_procs*4} cores): Communication overhead becomes dominant; expect 50-70% efficiency loss\n"
+            f"- Beyond 4 nodes: Unlikely to show benefit for these problem sizes\n\n"
+            "Fundamental limitation: Matrix-vector multiplication has O(N^2) computation but O(N) communication per process. "
+            "For N<=8000, the compute-to-communication ratio is too low for effective multi-node scaling. Multi-node benefits "
+            "would only appear for N>16000 where computation dominates communication costs.")
+    else:
+        pdf.multi_cell(0, 5,
+            "Multi-node projections require single-node baseline data.")
     
     # --- AI Tool Reflection ---
     pdf.ln(10)
@@ -695,6 +735,10 @@ def generate_report(strong_data, weak_data, openmp_data=None):
 
 def main():
     """Main execution"""
+    if not HAS_DEPS:
+        print("\nCannot proceed without required dependencies. Please install them and try again.")
+        return
+    
     print("Loading performance data...")
     strong_data = load_csv_data(STRONG_CSV, is_weak=False)
     weak_data = load_csv_data(WEAK_CSV, is_weak=True)
