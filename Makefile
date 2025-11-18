@@ -34,18 +34,18 @@ ifeq ($(UNAME), Darwin)
 	# macOS: basic optimization (Accelerate removed - use intrinsics instead)
 	CXXFLAGS ?= -O3 -std=c++11 -ffast-math -funroll-loops
 	MPI_LIBS ?=
+	# macOS OpenMP: requires libomp (install via: brew install libomp)
+	LIBOMP_PREFIX := $(shell brew --prefix libomp 2>/dev/null || echo "/usr/local/opt/libomp")
+	OMP_CXX ?= clang++
+	OMP_FLAGS ?= -O3 -std=c++11 -Xpreprocessor -fopenmp -I$(LIBOMP_PREFIX)/include -L$(LIBOMP_PREFIX)/lib -lomp -ffast-math
 else
 	# Linux: enable aggressive optimizations with AVX2/FMA for best performance
 	CXXFLAGS ?= -O3 -march=native -mavx2 -mfma -std=c++11 -ffast-math -funroll-loops -ftree-vectorize
 	MPI_LIBS ?=
+	# Linux OpenMP: standard flags
+	OMP_CXX ?= g++
+	OMP_FLAGS ?= -O3 -march=native -mavx2 -mfma -std=c++11 -fopenmp -ffast-math -funroll-loops -ftree-vectorize
 endif
-
-# OpenMP compiler for comparison version
-OMP_CXX ?= g++
-# On macOS, OpenMP support requires libomp; flags differ depending on the OpenMP install.
-# If you plan to build the OpenMP variant on macOS, set OMP_FLAGS in the environment, e.g.:
-#  make OMP_CXX=clang++ OMP_FLAGS='-O3 -std=c++11 -Xpreprocessor -fopenmp -lomp'
-OMP_FLAGS ?= -O3 -march=native -std=c++11 -fopenmp -ffast-math
 
 # Targets
 TARGET = hw3

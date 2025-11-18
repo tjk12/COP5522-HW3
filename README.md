@@ -3,6 +3,17 @@
 ## Overview
 High-performance MPI implementation of matrix-vector multiplication optimized for Linux x86-64 systems with AVX2/FMA support.
 
+## 🚀 Quick Start for Assignment Submission
+
+**See [WORKFLOW.md](WORKFLOW.md) for complete instructions on running experiments and generating the report.**
+
+1. **Setup:** `source setup-mpi.sh` (loads MPI module)
+2. **Build:** `make`
+3. **Run experiments:** `python3 run_benchmarks.py`
+4. **Generate report:** `python3 report.py`
+
+This produces `hw3.pdf` with all required figures and analysis.
+
 ## Linux Optimization Features
 This code is optimized for Linux HPC environments:
 - **AVX2/FMA intrinsics**: Primary code path uses 256-bit SIMD with fused multiply-add
