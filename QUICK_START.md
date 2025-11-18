@@ -1,7 +1,7 @@
 # Quick Start Guide - Running HW3 on the Cluster
 
-## Option 1: Submit Batch Job (Recommended)
-This runs everything automatically and emails you when done:
+## Step 1: Single-Node Tests (Required)
+Run single-node benchmarks (1-8 cores):
 
 ```bash
 sbatch RUN_ON_CLUSTER.sh
@@ -18,48 +18,51 @@ cat hw3_output.log
 ls -lh hw3.pdf
 ```
 
+**Result**: hw3.pdf with 2 figures populated (single-node) + 2 placeholders (multi-node)
+
 ---
 
-## Option 2: Interactive Session (For Testing)
-If you're already in an interactive session:
+## Step 2: Multi-Node Tests (Required for Complete Assignment)
+
+**⚠️ IMPORTANT**: The assignment requires **4 figures** with actual data:
+- Strong scaling: single-node AND multi-node
+- Weak scaling: single-node AND multi-node
+
+Run multi-node benchmarks (16-40 processes across 5 nodes):
 
 ```bash
-module load openmpi/4.0.5-gcc10.2.0
-./run_all.sh
+sbatch RUN_MULTINODE.sh
 ```
 
-Or start a new interactive session automatically:
-```bash
-interact -t 30:00 -N 1 --ntasks-per-node=8
-# Then once inside:
-module load openmpi/4.0.5-gcc10.2.0
-./run_all.sh
-```
+This will:
+1. Keep your existing single-node data (1-8 cores)
+2. Add multi-node data (16, 24, 32, 40 cores)
+3. Regenerate hw3.pdf with ALL 4 figures populated
 
 ---
 
 ## What Gets Generated
 
-- `hw3.pdf` - Your complete report with 4 figures and analysis
-- `hw3_output.log` - Full output log (batch mode only)
-- `strong_scaling_results.csv` - Strong scaling data
-- `weak_scaling_results.csv` - Weak scaling data  
-- `openmp_results.csv` - OpenMP comparison data
+After **Step 1** (single-node only):
+- `hw3.pdf` - Report with 2 real figures + 2 placeholders ⚠️
+- `strong_scaling_results.csv` - Data for 1-8 cores
+- `weak_scaling_results.csv` - Data for 1-8 cores
+- `openmp_results.csv` - OpenMP comparison
+
+After **Step 2** (multi-node added):
+- `hw3.pdf` - Complete report with ALL 4 figures ✅
+- `strong_scaling_results.csv` - Data for 1-8, 16, 24, 32, 40 cores
+- `weak_scaling_results.csv` - Data for 1-8, 16, 24, 32, 40 cores
 
 ---
 
-## Multi-Node Testing (Optional)
+## Interactive Testing (Optional)
 
-For the multi-node figures, run with more nodes:
-
+For quick testing:
 ```bash
-sbatch --nodes=2 --ntasks-per-node=16 RUN_ON_CLUSTER.sh
-```
-
-or
-
-```bash
-sbatch --nodes=4 --ntasks-per-node=16 RUN_ON_CLUSTER.sh
+interact -t 30:00 -N 1 --ntasks-per-node=8
+module load openmpi/4.0.5-gcc10.2.0
+./run_all.sh
 ```
 
 ---

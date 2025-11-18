@@ -361,6 +361,25 @@ def generate_report(strong_data, weak_data, openmp_data=None):
         "weak scaling (proportional increase in problem size and process count).")
     pdf.ln(5)
     
+    # --- Experimental Setup ---
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Experimental Setup", ln=True)
+    pdf.set_font("Helvetica", size=10)
+    pdf.multi_cell(0, 5,
+        "All experiments were conducted on a Linux HPC cluster using the following configuration:\n\n"
+        "Hardware:\n"
+        "- Compute nodes with multi-core processors\n"
+        "- High-speed interconnect for inter-node communication\n\n"
+        "Software:\n"
+        "- Compiler: mpic++ with -O3 -march=native optimizations\n"
+        "- MPI Implementation: OpenMPI 4.0.5\n\n"
+        "Test Configurations:\n"
+        "- Single-node tests: 1-8 cores on one node using 'interact -t 60:00 -N 1 --ntasks-per-node=8'\n"
+        "- Multi-node tests: 16-40 cores across 5 nodes using 'interact -t 60:00 -N 5 --ntasks-per-node=8'\n"
+        "- Matrix sizes tested: N = 1000, 2000, 4000, 8000 (and 16000 for multi-node)\n"
+        "- Each measurement excludes file I/O and initial communication overhead")
+    pdf.ln(5)
+    
     # --- Strong Scaling ---
     pdf.set_font("Helvetica", "B", 14)
     pdf.cell(0, 10, "2. Strong Scaling Analysis", ln=True)
