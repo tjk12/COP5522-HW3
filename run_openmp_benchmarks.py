@@ -31,8 +31,9 @@ class OpenMPBenchmarkRunner:
             # Run OpenMP program
             result = subprocess.run(
                 [self.executable, str(n_threads)],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,  # Python 3.6 compatible (same as text=True)
                 timeout=300,
                 env=env
             )

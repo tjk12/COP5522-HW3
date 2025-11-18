@@ -27,13 +27,41 @@ echo -e "${GREEN}✓ Clean complete${NC}\n"
 
 # Step 2: Build MPI version
 echo -e "${BLUE}[2/6] Building MPI version (hw3)...${NC}"
-if make; then
-    echo -e "${GREEN}✓ MPI build successful${NC}\n"
+
+# Try to build, if it fails due to missing MPI, attempt to load MPI module
+if ! make 2>&1 | tee /tmp/mpi_build.log; then
+    if grep -q "MPI compiler wrapper not found" /tmp/mpi_build.log; then
+        echo -e "${YELLOW}⚠ MPI compiler not found. Attempting to load MPI module...${NC}"
+        
+        # Try common MPI module names
+        if command -v module &> /dev/null; then
+            for mpi_module in mpi/openmpi-x86_64 openmpi mpi/openmpi openmpi-x86_64; do
+                echo -e "${BLUE}  Trying: module load $mpi_module${NC}"
+                if module load $mpi_module 2>/dev/null; then
+                    echo -e "${GREEN}  ✓ Loaded $mpi_module${NC}"
+                    # Try building again
+                    if make; then
+                        echo -e "${GREEN}✓ MPI build successful${NC}\n"
+                        break 2
+                    fi
+                fi
+            done
+        fi
+        
+        # If we get here, module loading failed
+        echo -e "${RED}✗ Could not load MPI module automatically${NC}"
+        echo -e "${YELLOW}Please manually load an MPI module:${NC}"
+        echo -e "${YELLOW}  1. Check available modules: module avail mpi${NC}"
+        echo -e "${YELLOW}  2. Load a module: module load mpi/openmpi-x86_64${NC}"
+        echo -e "${YELLOW}  3. Run this script again${NC}"
+        exit 1
+    else
+        echo -e "${RED}✗ MPI build failed!${NC}"
+        cat /tmp/mpi_build.log
+        exit 1
+    fi
 else
-    echo -e "${RED}✗ MPI build failed!${NC}"
-    echo -e "${YELLOW}Make sure MPI is installed and available.${NC}"
-    echo -e "${YELLOW}Try: module load mpi/openmpi-x86_64${NC}"
-    exit 1
+    echo -e "${GREEN}✓ MPI build successful${NC}\n"
 fi
 
 # Step 3: Build OpenMP version

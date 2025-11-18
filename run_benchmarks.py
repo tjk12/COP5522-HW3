@@ -28,8 +28,9 @@ class MPIBenchmarkRunner:
             # Run MPI program
             result = subprocess.run(
                 ['mpirun', '-np', str(n_procs), self.executable],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,  # Python 3.6 compatible (same as text=True)
                 timeout=300  # 5 minute timeout
             )
             
@@ -184,7 +185,10 @@ def main():
     
     # Check if mpirun is available
     try:
-        subprocess.run(['mpirun', '--version'], capture_output=True, check=True)
+        subprocess.run(['mpirun', '--version'], 
+                      stdout=subprocess.PIPE, 
+                      stderr=subprocess.PIPE, 
+                      check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("\nError: mpirun not found!")
         print("Please ensure MPI is installed and in your PATH.")
