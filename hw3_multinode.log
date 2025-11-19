@@ -1,0 +1,113 @@
+==========================================
+HW3 Multi-Node Benchmark Run (2 nodes)
+Nodes allocated: 2
+Tasks per node: 8
+Total tasks: 16
+Date: Tue Nov 18 20:38:55 EST 2025
+==========================================
+
+Loading MPI module...
+
+Building MPI executable...
+rm -f hw3 hw3_openmp *.o
+mpic++ -O3 -march=native -mavx2 -mfma -std=c++11 -ffast-math -funroll-loops -ftree-vectorize -o hw3 hw3.cpp 
+
+Running multi-node benchmarks (16 processes across 2 nodes)...
+
+=== Multi-Node Strong Scaling (16 processes) ===
+Testing N=4000, procs=16...
+
+Matrix Size: 4000x4000
+Number of Processes: 16
+Time = 4245 us
+Performance = 7.53828 Gflop/s
+C[N/2] = 0.00338676
+
+Testing N=8000, procs=16...
+
+Matrix Size: 8000x8000
+Number of Processes: 16
+Time = 5964 us
+Performance = 21.4621 Gflop/s
+C[N/2] = 0.00186656
+
+
+=== Multi-Node Weak Scaling (16 processes) ===
+Testing N=4000, procs=16 (weak scaling)...
+
+Matrix Size: 4000x4000
+Number of Processes: 16
+Time = 4156 us
+Performance = 7.69971 Gflop/s
+C[N/2] = 0.00338676
+
+
+Extending CSV files with multi-node data...
+Multi-Node MPI Benchmark Runner
+==================================================
+
+This script extends existing single-node results with multi-node data.
+Requires: MPI job with multiple nodes allocated
+
+=== Running Multi-Node Strong Scaling ===
+Matrix sizes: [4000, 8000, 16000]
+Process counts: [16, 24, 32, 40]
+Testing N=4000, procs=16... Time=4763.00us, Perf=6.72 Gflop/s, Speedup=0.69x, Eff=4.3%
+Testing N=4000, procs=24... Warning: Could not parse output for N=4000, procs=24
+FAILED
+Testing N=4000, procs=32... Warning: Could not parse output for N=4000, procs=32
+FAILED
+Testing N=4000, procs=40... Warning: Could not parse output for N=4000, procs=40
+FAILED
+Testing N=8000, procs=16... Time=5223.00us, Perf=24.51 Gflop/s, Speedup=2.31x, Eff=14.5%
+Testing N=8000, procs=24... Warning: Could not parse output for N=8000, procs=24
+FAILED
+Testing N=8000, procs=32... Warning: Could not parse output for N=8000, procs=32
+FAILED
+Testing N=8000, procs=40... Warning: Could not parse output for N=8000, procs=40
+FAILED
+Testing N=16000, procs=16... Time=8613.00us, Perf=59.45 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=16000, procs=24... Warning: Could not parse output for N=16000, procs=24
+FAILED
+Testing N=16000, procs=32... Warning: Could not parse output for N=16000, procs=32
+FAILED
+Testing N=16000, procs=40... Warning: Could not parse output for N=16000, procs=40
+FAILED
+
+Updated strong_scaling_results.csv with 22 total entries
+
+=== Running Multi-Node Weak Scaling ===
+Base work per process: ~1M elements
+Process counts: [16, 24, 32, 40]
+Testing procs=16, N=4000... Time=3562.00us, Perf=8.98 Gflop/s, Eff=100.0%
+Testing procs=24, N=4898... Warning: Could not parse output for N=4898, procs=24
+FAILED
+Testing procs=32, N=5656... Warning: Could not parse output for N=5656, procs=32
+FAILED
+Testing procs=40, N=6324... Warning: Could not parse output for N=6324, procs=40
+FAILED
+
+Updated weak_scaling_results.csv with 1 total entries
+
+==================================================
+Multi-node benchmarks complete!
+
+Next: Run 'python3 report.py' to regenerate hw3.pdf with multi-node data
+
+Regenerating PDF report with multi-node data...
+Loading performance data...
+Loaded OpenMP comparison data: 16 entries
+Generating charts...
+Generated strong_scaling_single_node.png
+Generated strong_scaling_multi_node.png
+Generated weak_scaling_multi_node.png
+Creating PDF report...
+Report successfully generated: hw3.pdf
+
+=== Report generation complete ===
+Output: hw3.pdf
+
+==========================================
+Multi-node job complete!
+Check hw3.pdf for complete results
+==========================================
