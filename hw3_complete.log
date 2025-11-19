@@ -1,0 +1,161 @@
+==========================================
+HW3 Complete Benchmark Run (Fresh Start)
+Nodes allocated: 4
+Date: Tue Nov 18 21:25:07 EST 2025
+==========================================
+
+Loading MPI module...
+
+Cleaning previous builds and results...
+rm -f hw3 hw3_openmp *.o
+
+Building executables...
+mpic++ -O3 -march=native -mavx2 -mfma -std=c++11 -ffast-math -funroll-loops -ftree-vectorize -o hw3 hw3.cpp 
+g++ -O3 -march=native -mavx2 -mfma -std=c++11 -fopenmp -ffast-math -funroll-loops -ftree-vectorize -o hw3_openmp hw3_openmp.cpp
+
+==========================================
+Step 1: Running OpenMP benchmarks...
+==========================================
+OpenMP Benchmark Runner
+==================================================
+
+Testing with thread counts: [1, 2, 4, 8]
+=== Running OpenMP Scaling Experiments ===
+Matrix sizes: [1000, 2000, 4000, 8000]
+Thread counts: [1, 2, 4, 8]
+Testing N=1000, threads=1... Time=205.0us, Perf=9.76 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=1000, threads=2... Time=277.0us, Perf=7.22 Gflop/s, Speedup=0.74x, Eff=37.0%
+Testing N=1000, threads=4... Time=432.0us, Perf=4.63 Gflop/s, Speedup=0.47x, Eff=11.9%
+Testing N=1000, threads=8... Time=638.0us, Perf=3.13 Gflop/s, Speedup=0.32x, Eff=4.0%
+Testing N=2000, threads=1... Time=1216.0us, Perf=6.58 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=2000, threads=2... Time=978.0us, Perf=8.18 Gflop/s, Speedup=1.24x, Eff=62.2%
+Testing N=2000, threads=4... Time=976.0us, Perf=8.20 Gflop/s, Speedup=1.25x, Eff=31.1%
+Testing N=2000, threads=8... Time=1290.0us, Perf=6.20 Gflop/s, Speedup=0.94x, Eff=11.8%
+Testing N=4000, threads=1... Time=4797.0us, Perf=6.67 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=4000, threads=2... Time=2700.0us, Perf=11.85 Gflop/s, Speedup=1.78x, Eff=88.8%
+Testing N=4000, threads=4... Time=2951.0us, Perf=10.84 Gflop/s, Speedup=1.63x, Eff=40.6%
+Testing N=4000, threads=8... Time=1771.0us, Perf=18.07 Gflop/s, Speedup=2.71x, Eff=33.9%
+Testing N=8000, threads=1... Time=18975.0us, Perf=6.75 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=8000, threads=2... Time=9496.0us, Perf=13.48 Gflop/s, Speedup=2.00x, Eff=99.9%
+Testing N=8000, threads=4... Time=8845.0us, Perf=14.47 Gflop/s, Speedup=2.15x, Eff=53.6%
+Testing N=8000, threads=8... Time=4524.0us, Perf=28.29 Gflop/s, Speedup=4.19x, Eff=52.4%
+
+Saved 16 results to openmp_results.csv
+
+==================================================
+OpenMP benchmark complete!
+
+Generated files:
+  - openmp_results.csv
+
+Next: Run 'python3 run_benchmarks.py' for MPI results
+Then: Run 'python3 report.py' to generate hw3.pdf with comparison
+
+==========================================
+Step 2: Running single-node MPI benchmarks...
+==========================================
+MPI Benchmark Runner for HW3
+==================================================
+
+Starting strong scaling tests...
+This will test multiple matrix sizes with varying process counts.
+=== Running Strong Scaling Experiments ===
+Matrix sizes: [1000, 2000, 4000, 8000]
+Process counts: [1, 2, 4, 8]
+Testing N=1000, procs=1... Time=143.0us, Perf=13.99 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=1000, procs=2... Time=76.0us, Perf=26.32 Gflop/s, Speedup=1.88x, Eff=94.1%
+Testing N=1000, procs=4... Time=105.0us, Perf=19.05 Gflop/s, Speedup=1.36x, Eff=34.0%
+Testing N=1000, procs=8... Time=277.0us, Perf=7.22 Gflop/s, Speedup=0.52x, Eff=6.5%
+Testing N=2000, procs=1... Time=779.0us, Perf=10.27 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=2000, procs=2... Time=405.0us, Perf=19.75 Gflop/s, Speedup=1.92x, Eff=96.2%
+Testing N=2000, procs=4... Time=561.0us, Perf=14.26 Gflop/s, Speedup=1.39x, Eff=34.7%
+Testing N=2000, procs=8... Time=156.0us, Perf=51.28 Gflop/s, Speedup=4.99x, Eff=62.4%
+Testing N=4000, procs=1... Time=3411.0us, Perf=9.38 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=4000, procs=2... Time=1571.0us, Perf=20.37 Gflop/s, Speedup=2.17x, Eff=108.6%
+Testing N=4000, procs=4... Time=1759.0us, Perf=18.19 Gflop/s, Speedup=1.94x, Eff=48.5%
+Testing N=4000, procs=8... Time=762.0us, Perf=41.99 Gflop/s, Speedup=4.48x, Eff=56.0%
+Testing N=8000, procs=1... Time=12335.0us, Perf=10.38 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=8000, procs=2... Time=6197.0us, Perf=20.66 Gflop/s, Speedup=1.99x, Eff=99.5%
+Testing N=8000, procs=4... Time=4061.0us, Perf=31.52 Gflop/s, Speedup=3.04x, Eff=75.9%
+Testing N=8000, procs=8... Time=3722.0us, Perf=34.39 Gflop/s, Speedup=3.31x, Eff=41.4%
+
+Saved 16 results to strong_scaling_results.csv
+
+Starting weak scaling tests...
+This maintains constant work per process.
+
+=== Running Weak Scaling Experiments ===
+Base sizes: [1000]
+Process counts: [1, 2, 4, 8]
+Testing base_N=1000, procs=1, total_N=1000... Time=156.0us, Perf=12.82 Gflop/s, Eff=100.0%
+Testing base_N=1000, procs=2, total_N=1414... Time=150.0us, Perf=26.66 Gflop/s, Eff=207.9%
+Testing base_N=1000, procs=4, total_N=2000... Time=150.0us, Perf=53.33 Gflop/s, Eff=416.0%
+Testing base_N=1000, procs=8, total_N=2828... Time=173.0us, Perf=92.46 Gflop/s, Eff=721.2%
+
+Saved 4 results to weak_scaling_results.csv
+
+==================================================
+Benchmark complete!
+
+Generated files:
+  - strong_scaling_results.csv
+  - weak_scaling_results.csv
+
+Next steps:
+  1. Run 'python3 report.py' to generate hw3.pdf
+
+==========================================
+Step 3: Running multi-node MPI benchmarks...
+==========================================
+Multi-Node MPI Benchmark Runner
+==================================================
+
+This script extends existing single-node results with multi-node data.
+Requires: MPI job with multiple nodes allocated
+
+=== Running Multi-Node Strong Scaling ===
+Matrix sizes: [4000, 8000, 16000]
+Process counts: [16, 24, 32]
+Testing N=4000, procs=16... Time=4211.00us, Perf=7.60 Gflop/s, Speedup=0.81x, Eff=5.1%
+Testing N=4000, procs=24... Time=9051.00us, Perf=3.54 Gflop/s, Speedup=0.38x, Eff=1.6%
+Testing N=4000, procs=32... Time=3979.00us, Perf=8.04 Gflop/s, Speedup=0.86x, Eff=2.7%
+Testing N=8000, procs=16... Time=5254.00us, Perf=24.36 Gflop/s, Speedup=2.35x, Eff=14.7%
+Testing N=8000, procs=24... Time=10002.00us, Perf=12.80 Gflop/s, Speedup=1.23x, Eff=5.1%
+Testing N=8000, procs=32... Time=4761.00us, Perf=26.89 Gflop/s, Speedup=2.59x, Eff=8.1%
+Testing N=16000, procs=16... Time=10445.00us, Perf=49.02 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=16000, procs=24... Time=11561.00us, Perf=44.29 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=16000, procs=32... Time=6658.00us, Perf=76.90 Gflop/s, Speedup=1.00x, Eff=100.0%
+
+Updated strong_scaling_results.csv with 25 total entries
+
+=== Running Multi-Node Weak Scaling ===
+Base work per process: ~1M elements
+Process counts: [16, 24, 32]
+Testing procs=16, N=4000... Time=3799.00us, Perf=8.42 Gflop/s, Eff=65.7%
+Testing procs=24, N=4898... Time=8963.00us, Perf=5.35 Gflop/s, Eff=41.8%
+Testing procs=32, N=5656... Time=3601.00us, Perf=17.77 Gflop/s, Eff=138.6%
+
+==========================================
+Step 4: Generating PDF report...
+==========================================
+Loading performance data...
+Loaded OpenMP comparison data: 16 entries
+Generating charts...
+Generated strong_scaling_single_node.png
+Generated strong_scaling_multi_node.png
+Generated weak_scaling_single_node.png
+Generated placeholder: weak_scaling_multi_node.png
+Creating PDF report...
+Report successfully generated: hw3.pdf
+
+=== Report generation complete ===
+Output: hw3.pdf
+
+==========================================
+Complete benchmark run finished!
+Generated:
+  - hw3.pdf (299K)
+  - openmp_results.csv (894)
+  - strong_scaling_results.csv (1.2K)
+  - weak_scaling_results.csv (232)
+==========================================

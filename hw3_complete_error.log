@@ -1,0 +1,17 @@
+
+Currently Loaded Modules:
+  1) allocations/1.0            3) openmpi/4.0.5-gcc10.2.0
+  2) psc.allocations.user/1.0
+
+ 
+
+Traceback (most recent call last):
+  File "run_multinode_benchmarks.py", line 238, in <module>
+    main()
+  File "run_multinode_benchmarks.py", line 231, in main
+    runner.run_multinode_weak_scaling()
+  File "run_multinode_benchmarks.py", line 217, in run_multinode_weak_scaling
+    raise e
+  File "run_multinode_benchmarks.py", line 207, in run_multinode_weak_scaling
+    'work_per_proc': r.get('work_per_proc', r['size'] // r['procs']),
+TypeError: unsupported operand type(s) for //: 'str' and 'str'
