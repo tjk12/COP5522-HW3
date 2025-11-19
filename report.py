@@ -375,8 +375,8 @@ def generate_report(strong_data, weak_data, openmp_data=None):
         "- MPI Implementation: OpenMPI 4.0.5\n\n"
         "Test Configurations:\n"
         "- Single-node tests: 1-8 cores on one node\n"
-        "- Multi-node tests: 16 cores across 2 nodes (8 cores per node)\n"
-        "- Batch submission: 'sbatch' with --nodes=2 --ntasks-per-node=8 --time=60:00\n"
+        "- Multi-node tests: 16, 24, 32 cores across 2-4 nodes (8 cores per node)\n"
+        "- Batch submission: Multiple jobs with --nodes=2,3,4 --ntasks-per-node=8 --time=30:00\n"
         "- Matrix sizes tested: N = 1000, 2000, 4000, 8000 (and 16000 for multi-node)\n"
         "- Each measurement excludes file I/O and initial communication overhead")
     pdf.ln(5)

@@ -8,6 +8,8 @@ import subprocess
 import sys
 import csv
 import re
+import os
+import tempfile
 from pathlib import Path
 
 class MultiNodeBenchmarkRunner:
@@ -65,13 +67,13 @@ class MultiNodeBenchmarkRunner:
             return None
     
     def run_multinode_strong_scaling(self):
-        """Run strong scaling with 16 processes (2-node multi-node)"""
+        """Run strong scaling with 16, 24, 32 processes (2-4 node multi-node)"""
         print("=== Running Multi-Node Strong Scaling ===")
         print("Matrix sizes: [4000, 8000, 16000]")
-        print("Process counts: [16]")
+        print("Process counts: [16, 24, 32]")
         
         matrix_sizes = [4000, 8000, 16000]
-        process_counts = [16]
+        process_counts = [16, 24, 32]
         
         # Load existing single-node data
         existing_data = []
@@ -115,27 +117,35 @@ class MultiNodeBenchmarkRunner:
                 print(f"Time={result['time_us']:.2f}us, Perf={result['gflops']:.2f} Gflop/s, Speedup={speedup:.2f}x, Eff={efficiency:.1f}%")
                 results.append(result)
         
-        # Write combined results
-        with open('strong_scaling_results.csv', 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=['size', 'procs', 'time_us', 'gflops', 'speedup', 'efficiency'])
-            writer.writeheader()
-            for r in results:
-                writer.writerow({
-                    'size': r['size'],
-                    'procs': r['procs'],
-                    'time_us': f"{r['time_us']:.1f}" if isinstance(r['time_us'], float) else r['time_us'],
-                    'gflops': f"{r['gflops']:.5f}" if isinstance(r['gflops'], float) else r['gflops'],
-                    'speedup': f"{r['speedup']:.1f}" if isinstance(r['speedup'], float) else r['speedup'],
-                    'efficiency': f"{r['efficiency']:.1f}" if isinstance(r['efficiency'], float) else r['efficiency']
-                })
-        
-        print(f"\nUpdated strong_scaling_results.csv with {len(results)} total entries")
+        # Write combined results atomically to prevent corruption
+        temp_fd, temp_path = tempfile.mkstemp(dir='.', suffix='.csv')
+        try:
+            with os.fdopen(temp_fd, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=['size', 'procs', 'time_us', 'gflops', 'speedup', 'efficiency'])
+                writer.writeheader()
+                for r in results:
+                    writer.writerow({
+                        'size': r['size'],
+                        'procs': r['procs'],
+                        'time_us': f"{r['time_us']:.1f}" if isinstance(r['time_us'], float) else r['time_us'],
+                        'gflops': f"{r['gflops']:.5f}" if isinstance(r['gflops'], float) else r['gflops'],
+                        'speedup': f"{r['speedup']:.1f}" if isinstance(r['speedup'], float) else r['speedup'],
+                        'efficiency': f"{r['efficiency']:.1f}" if isinstance(r['efficiency'], float) else r['efficiency']
+                    })
+            # Atomic rename - if we crash before this, old file is preserved
+            os.rename(temp_path, 'strong_scaling_results.csv')
+            print(f"\nUpdated strong_scaling_results.csv with {len(results)} total entries")
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise e
     
     def run_multinode_weak_scaling(self):
-        """Run weak scaling with 16 processes (2-node multi-node)"""
+        """Run weak scaling with 16, 24, 32 processes (2-4 node multi-node)"""
         print("\n=== Running Multi-Node Weak Scaling ===")
         print("Base work per process: ~1M elements")
-        print("Process counts: [16]")
+        print("Process counts: [16, 24, 32]")
         
         # Load existing single-node data
         existing_data = []
@@ -158,7 +168,7 @@ class MultiNodeBenchmarkRunner:
                 baseline_perf = float(row['gflops'])
                 break
         
-        process_counts = [16]
+        process_counts = [16, 24, 32]
         for procs in process_counts:
             total_elements = base_work * procs
             n_size = int(total_elements ** 0.5)
@@ -182,21 +192,29 @@ class MultiNodeBenchmarkRunner:
             print(f"Time={result['time_us']:.2f}us, Perf={result['gflops']:.2f} Gflop/s, Eff={efficiency:.1f}%")
             results.append(result)
         
-        # Write combined results
-        with open('weak_scaling_results.csv', 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=['size', 'procs', 'time_us', 'gflops', 'work_per_proc', 'efficiency'])
-            writer.writeheader()
-            for r in results:
-                writer.writerow({
-                    'size': r['size'],
-                    'procs': r['procs'],
-                    'time_us': f"{r['time_us']:.1f}" if isinstance(r['time_us'], float) else r['time_us'],
-                    'gflops': f"{r['gflops']:.5f}" if isinstance(r['gflops'], float) else r['gflops'],
-                    'work_per_proc': r.get('work_per_proc', r['size'] // r['procs']),
-                    'efficiency': f"{r['efficiency']:.1f}" if isinstance(r['efficiency'], float) else r['efficiency']
-                })
-        
-        print(f"\nUpdated weak_scaling_results.csv with {len(results)} total entries")
+        # Write combined results atomically to prevent corruption
+        temp_fd, temp_path = tempfile.mkstemp(dir='.', suffix='.csv')
+        try:
+            with os.fdopen(temp_fd, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=['size', 'procs', 'time_us', 'gflops', 'work_per_proc', 'efficiency'])
+                writer.writeheader()
+                for r in results:
+                    writer.writerow({
+                        'size': r['size'],
+                        'procs': r['procs'],
+                        'time_us': f"{r['time_us']:.1f}" if isinstance(r['time_us'], float) else r['time_us'],
+                        'gflops': f"{r['gflops']:.5f}" if isinstance(r['gflops'], float) else r['gflops'],
+                        'work_per_proc': r.get('work_per_proc', r['size'] // r['procs']),
+                        'efficiency': f"{r['efficiency']:.1f}" if isinstance(r['efficiency'], float) else r['efficiency']
+                    })
+            # Atomic rename - if we crash before this, old file is preserved
+            os.rename(temp_path, 'weak_scaling_results.csv')
+            print(f"\nUpdated weak_scaling_results.csv with {len(results)} total entries")
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise e
 
 def main():
     print("Multi-Node MPI Benchmark Runner")

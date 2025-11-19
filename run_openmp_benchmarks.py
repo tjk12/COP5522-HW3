@@ -8,6 +8,7 @@ import sys
 import os
 import csv
 import re
+import tempfile
 from pathlib import Path
 
 class OpenMPBenchmarkRunner:
@@ -111,19 +112,28 @@ class OpenMPBenchmarkRunner:
         return results
     
     def save_to_csv(self, results, filename):
-        """Save results to CSV file"""
+        """Save results to CSV file atomically to prevent corruption"""
         if not results:
             print(f"Warning: No results to save to {filename}")
             return
         
         fieldnames = list(results[0].keys())
         
-        with open(filename, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(results)
-        
-        print(f"\nSaved {len(results)} results to {filename}")
+        # Use atomic write to prevent corruption
+        temp_fd, temp_path = tempfile.mkstemp(dir='.', suffix='.csv')
+        try:
+            with os.fdopen(temp_fd, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(results)
+            # Atomic rename - if we crash before this, no data is lost
+            os.rename(temp_path, filename)
+            print(f"\nSaved {len(results)} results to {filename}")
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise e
 
 def main():
     print("OpenMP Benchmark Runner")
