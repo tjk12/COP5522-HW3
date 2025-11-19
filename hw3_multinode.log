@@ -1,9 +1,8 @@
 ==========================================
-HW3 Multi-Node Benchmark Run (2 nodes)
-Nodes allocated: 2
-Tasks per node: 8
-Total tasks: 16
-Date: Tue Nov 18 21:09:41 EST 2025
+HW3 Multi-Node Sequential Benchmark
+Will test 16, 24, 32 processes
+Nodes allocated: 4
+Date: Tue Nov 18 21:35:26 EST 2025
 ==========================================
 
 Loading MPI module...
@@ -12,7 +11,7 @@ Building MPI executable...
 rm -f hw3 hw3_openmp *.o
 mpic++ -O3 -march=native -mavx2 -mfma -std=c++11 -ffast-math -funroll-loops -ftree-vectorize -o hw3 hw3.cpp 
 
-Running multi-node benchmarks (16 processes across 2 nodes)...
+Running multi-node benchmarks...
 Multi-Node MPI Benchmark Runner
 ==================================================
 
@@ -21,24 +20,41 @@ Requires: MPI job with multiple nodes allocated
 
 === Running Multi-Node Strong Scaling ===
 Matrix sizes: [4000, 8000, 16000]
-Process counts: [16]
-Testing N=4000, procs=16... Time=4612.00us, Perf=6.94 Gflop/s, Speedup=0.71x, Eff=4.4%
-Testing N=8000, procs=16... Time=5540.00us, Perf=23.10 Gflop/s, Speedup=2.18x, Eff=13.6%
-Testing N=16000, procs=16... Time=10229.00us, Perf=50.05 Gflop/s, Speedup=1.00x, Eff=100.0%
+Process counts: [16, 24, 32]
+Testing N=4000, procs=16... Time=3883.00us, Perf=8.24 Gflop/s, Speedup=0.88x, Eff=5.5%
+Testing N=4000, procs=24... Time=8951.00us, Perf=3.58 Gflop/s, Speedup=0.38x, Eff=1.6%
+Testing N=4000, procs=32... Time=4012.00us, Perf=7.98 Gflop/s, Speedup=0.85x, Eff=2.7%
+Testing N=8000, procs=16... Time=4756.00us, Perf=26.91 Gflop/s, Speedup=2.59x, Eff=16.2%
+Testing N=8000, procs=24... Time=9927.00us, Perf=12.89 Gflop/s, Speedup=1.24x, Eff=5.2%
+Testing N=8000, procs=32... Time=4328.00us, Perf=29.57 Gflop/s, Speedup=2.85x, Eff=8.9%
+Testing N=16000, procs=16... Time=9908.00us, Perf=51.68 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=16000, procs=24... Time=12046.00us, Perf=42.50 Gflop/s, Speedup=1.00x, Eff=100.0%
+Testing N=16000, procs=32... Time=6879.00us, Perf=74.43 Gflop/s, Speedup=1.00x, Eff=100.0%
 
-Updated strong_scaling_results.csv with 25 total entries
+Updated strong_scaling_results.csv with 34 total entries
 
 === Running Multi-Node Weak Scaling ===
 Base work per process: ~1M elements
-Process counts: [16]
-Testing procs=16, N=4000... Time=4190.00us, Perf=7.64 Gflop/s, Eff=100.0%
+Process counts: [16, 24, 32]
+Testing procs=16, N=4000... Time=3309.00us, Perf=9.67 Gflop/s, Eff=75.4%
+Testing procs=24, N=4898... Time=9273.00us, Perf=5.17 Gflop/s, Eff=40.4%
+Testing procs=32, N=5656... Time=4101.00us, Perf=15.60 Gflop/s, Eff=121.7%
 
-Regenerating PDF report with multi-node data...
+Updated weak_scaling_results.csv with 7 total entries
+
+==================================================
+Multi-node benchmarks complete!
+
+Next: Run 'python3 report.py' to regenerate hw3.pdf with multi-node data
+
+Regenerating PDF report...
 Loading performance data...
 Loaded OpenMP comparison data: 16 entries
 Generating charts...
 Generated strong_scaling_single_node.png
 Generated strong_scaling_multi_node.png
+Generated weak_scaling_single_node.png
+Generated weak_scaling_multi_node.png
 Creating PDF report...
 Report successfully generated: hw3.pdf
 
@@ -46,6 +62,7 @@ Report successfully generated: hw3.pdf
 Output: hw3.pdf
 
 ==========================================
-Multi-node job complete!
+All multi-node tests complete!
+Tested: 16, 24, 32 processes
 Check hw3.pdf for complete results
 ==========================================

@@ -5,11 +5,3 @@ Currently Loaded Modules:
 
  
 
-Traceback (most recent call last):
-  File "run_multinode_benchmarks.py", line 220, in <module>
-    main()
-  File "run_multinode_benchmarks.py", line 213, in main
-    runner.run_multinode_weak_scaling()
-  File "run_multinode_benchmarks.py", line 195, in run_multinode_weak_scaling
-    'work_per_proc': r.get('work_per_proc', r['size'] // r['procs']),
-TypeError: unsupported operand type(s) for //: 'str' and 'str'
