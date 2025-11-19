@@ -65,13 +65,13 @@ class MultiNodeBenchmarkRunner:
             return None
     
     def run_multinode_strong_scaling(self):
-        """Run strong scaling with 16, 24, 32, 40 processes (multi-node)"""
+        """Run strong scaling with 16 processes (2-node multi-node)"""
         print("=== Running Multi-Node Strong Scaling ===")
         print("Matrix sizes: [4000, 8000, 16000]")
-        print("Process counts: [16, 24, 32, 40]")
+        print("Process counts: [16]")
         
         matrix_sizes = [4000, 8000, 16000]
-        process_counts = [16, 24, 32, 40]
+        process_counts = [16]
         
         # Load existing single-node data
         existing_data = []
@@ -132,10 +132,10 @@ class MultiNodeBenchmarkRunner:
         print(f"\nUpdated strong_scaling_results.csv with {len(results)} total entries")
     
     def run_multinode_weak_scaling(self):
-        """Run weak scaling with 16, 24, 32, 40 processes (multi-node)"""
+        """Run weak scaling with 16 processes (2-node multi-node)"""
         print("\n=== Running Multi-Node Weak Scaling ===")
         print("Base work per process: ~1M elements")
-        print("Process counts: [16, 24, 32, 40]")
+        print("Process counts: [16]")
         
         # Load existing single-node data
         existing_data = []
@@ -158,7 +158,7 @@ class MultiNodeBenchmarkRunner:
                 baseline_perf = float(row['gflops'])
                 break
         
-        process_counts = [16, 24, 32, 40]
+        process_counts = [16]
         for procs in process_counts:
             total_elements = base_work * procs
             n_size = int(total_elements ** 0.5)

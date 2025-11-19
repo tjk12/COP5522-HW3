@@ -34,26 +34,6 @@ echo ""
 
 # Run multi-node benchmarks with 16 processes (2 nodes × 8 tasks)
 echo "Running multi-node benchmarks (16 processes across 2 nodes)..."
-
-# Manually run key multi-node tests
-echo ""
-echo "=== Multi-Node Strong Scaling (16 processes) ==="
-
-for N in 4000 8000; do
-    echo "$N" > input.txt
-    echo "Testing N=$N, procs=16..."
-    mpirun -np 16 ./hw3
-done
-
-echo ""
-echo "=== Multi-Node Weak Scaling (16 processes) ==="
-# N=4000 gives 1M elements per process with 16 procs
-echo "4000" > input.txt
-echo "Testing N=4000, procs=16 (weak scaling)..."
-mpirun -np 16 ./hw3
-
-echo ""
-echo "Extending CSV files with multi-node data..."
 python3 run_multinode_benchmarks.py
 
 echo ""
