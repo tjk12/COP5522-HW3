@@ -366,17 +366,17 @@ def generate_report(strong_data, weak_data, openmp_data=None):
     pdf.cell(0, 8, "Experimental Setup", ln=True)
     pdf.set_font("Helvetica", size=10)
     pdf.multi_cell(0, 5,
-        "All experiments were conducted on a Linux HPC cluster using the following configuration:\n\n"
+        "All experiments were conducted on the PSC Bridges-2 HPC cluster using the following configuration:\n\n"
         "Hardware:\n"
-        "- Compute nodes with multi-core processors\n"
-        "- High-speed interconnect for inter-node communication\n\n"
+        "- AMD EPYC 7742 processors (64 cores per node, 2.25 GHz base frequency)\n"
+        "- High-performance interconnect for inter-node communication\n\n"
         "Software:\n"
-        "- Compiler: mpic++ with -O3 -march=native optimizations\n"
-        "- MPI Implementation: OpenMPI 4.0.5\n\n"
+        "- Compiler: mpic++ (OpenMPI wrapper) with -O3 -march=native -mavx2 -mfma optimizations\n"
+        "- MPI Implementation: OpenMPI 4.0.5 with GCC 10.2.0\n\n"
         "Test Configurations:\n"
         "- Single-node tests: 1-8 cores on one node\n"
         "- Multi-node tests: 16, 24, 32 cores across 2-4 nodes (8 cores per node)\n"
-        "- Batch submission: Multiple jobs with --nodes=2,3,4 --ntasks-per-node=8 --time=30:00\n"
+        "- Batch submission: Slurm jobs with --nodes=2,3,4 --ntasks-per-node=8\n"
         "- Matrix sizes tested: N = 1000, 2000, 4000, 8000 (and 16000 for multi-node)\n"
         "- Each measurement excludes file I/O and initial communication overhead")
     pdf.ln(5)

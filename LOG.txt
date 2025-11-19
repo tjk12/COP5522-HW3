@@ -1,0 +1,57 @@
+Development Log: HW3 MPI Parallelization
+Name: Trever Knie
+
+November 11, 2025: Project Kickoff and Initial Implementation
+Began the assignment by creating an MPI-parallelized version of matrix-vector multiplication in C++, building on concepts from HW1 and HW2. Implemented row-based data distribution where process 0 reads matrix size N from input.txt, then distributes work using block decomposition with remainder handling.
+
+Developed the core hw3.cpp with MPI_Gatherv to handle uneven row distribution across processes. Each process computes local_rows = N/size + (rank < remainder ? 1 : 0) to ensure all rows are assigned.
+
+Enhanced the cross-platform Makefile from HW2 to support MPI compilation with mpic++, maintaining compatibility between macOS and Linux with platform-specific optimization flags (-O3 -march=native -mavx2 -mfma).
+
+Created a serial reference implementation (Mv.cpp) for validation purposes.
+
+November 12, 2025: Benchmarking Infrastructure
+Developed run_benchmarks.py to automate single-node MPI testing for both strong scaling (fixed problem size, varying process counts) and weak scaling (constant work per process). The script tests matrix sizes N=1000,2000,4000,8000 with 1,2,4,8 processes, calculating speedup, efficiency, and Gflop/s metrics.
+
+Created run_openmp_benchmarks.py for OpenMP comparison testing with hw3_openmp.cpp to contrast MPI and shared-memory parallel performance.
+
+Established the reporting framework with report.py to generate comprehensive PDF reports with matplotlib visualizations showing strong and weak scaling behavior.
+
+November 13, 2025: Local Testing and Validation
+Performed initial testing on macOS to verify compilation and basic functionality. Validated algorithmic correctness with small matrix sizes and confirmed that MPI communication patterns were working as expected.
+
+Debugged Makefile issues related to macOS's lack of native MPI support, eventually configuring the build system to work seamlessly across both development (macOS) and production (Bridges-2 cluster) environments.
+
+November 14-15, 2025: Cluster Deployment and Single-Node Benchmarks
+Successfully deployed to the PSC Bridges-2 HPC cluster (AMD EPYC 7742 processors, 64 cores per node). Loaded OpenMPI 4.0.5 with GCC 10.2.0 and completed comprehensive single-node testing.
+
+Achieved peak single-node performance of 51.28 Gflop/s at N=2000 with 8 processes, demonstrating 4.99x speedup and 62.4% efficiency. OpenMP comparison showed peak of 28.29 Gflop/s with 8 threads, confirming MPI's performance advantage for this workload.
+
+Encountered a critical challenge: interactive multi-node sessions were denied by the cluster scheduler with error "Job submit/allocate failed: Node count specification invalid." Learned that multi-node jobs must be submitted through the Slurm batch system (sbatch) rather than interactive allocation.
+
+November 16, 2025: Multi-Node Execution Strategy
+Created batch submission scripts for multi-node testing. Initial attempt with RUN_MULTINODE_5NODES.sh (40 processes across 5 nodes) encountered extremely long queue times in Priority status. Adjusted strategy to use 2-4 nodes for faster scheduling turnaround.
+
+Successfully ran first multi-node job (Job 36082518) with RUN_MULTINODE_2NODES.sh testing 16 processes across 2 nodes on compute nodes r191 and r259. Collected initial multi-node data showing 7.54-21.46 Gflop/s range.
+
+Identified issue: single data point per chart insufficient for meaningful multi-node scaling analysis. Determined need for multiple process counts (16, 24, 32) to generate proper scaling curves.
+
+November 17, 2025: Multi-Node Data Collection Refinement
+Extended run_multinode_benchmarks.py to test 16, 24, and 32 processes across 2-4 nodes, providing three data points for multi-node charts. Created RUN_MULTINODE_SEQUENTIAL.sh with 4-node allocation to support up to 32 processes.
+
+Reviewed assignment requirements and confirmed need for exactly 4 figures: strong scaling (single-node), strong scaling (multi-node), weak scaling (single-node), and weak scaling (multi-node). Updated report.py to generate all four figures with proper separation at SINGLE_NODE_MAX_PROCS=8.
+
+Enhanced report structure with detailed "Experimental Setup" section documenting hardware (Bridges-2 AMD EPYC 7742), software (OpenMPI 4.0.5), and test configurations for reproducibility.
+
+November 18, 2025: Data Integrity Crisis and Resolution
+Discovered critical bug: weak_scaling_results.csv file was empty despite benchmark scripts reporting successful execution. Root cause identified as unsafe file I/O pattern using open() with 'w' mode, which truncates the file immediately before writing. Any script crash or exception after truncation resulted in complete data loss.
+
+Implemented atomic write pattern across all benchmark scripts (run_benchmarks.py, run_openmp_benchmarks.py, run_multinode_benchmarks.py) using tempfile.mkstemp() followed by os.rename() for POSIX-atomic file replacement. This ensures that either the complete new data is written or the original file remains intact.
+
+Created RUN_COMPLETE.sh batch script for comprehensive end-to-end regeneration: clean all results, rebuild executables, run OpenMP benchmarks, run single-node MPI benchmarks, run multi-node MPI benchmarks, and generate final report.
+
+Discovered secondary bug where multi-node weak scaling tests executed but failed to persist data to CSV. Issue was twofold: CSV reader returns strings while new data used numeric types (type mismatch during write), and missing error logging masked the failure. Added explicit type conversion when reading existing CSV data and enhanced exception handlers with full traceback logging.
+
+Executed final comprehensive benchmark run on Bridges-2 with 4-node allocation. Successfully collected all required data: single-node (1-8 cores) and multi-node (16, 24, 32 cores) for both strong and weak scaling experiments. Updated report.py to reference "Bridges-2 HPC" instead of generic "Linux HPC cluster" for accuracy.
+
+Generated final hw3.pdf with all four figures containing actual performance data, achieving peak multi-node performance of 76.90 Gflop/s at N=16000 with 32 processes. Report includes comprehensive analysis of scaling efficiency, communication overhead effects, and comparison between MPI and OpenMP approaches.
