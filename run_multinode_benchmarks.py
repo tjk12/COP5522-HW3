@@ -152,7 +152,16 @@ class MultiNodeBenchmarkRunner:
         try:
             with open('weak_scaling_results.csv', 'r') as f:
                 reader = csv.DictReader(f)
-                existing_data = list(reader)
+                for row in reader:
+                    # Convert string types from CSV to appropriate types
+                    existing_data.append({
+                        'size': int(row['size']),
+                        'procs': int(row['procs']),
+                        'time_us': float(row['time_us']),
+                        'gflops': float(row['gflops']),
+                        'work_per_proc': int(row['work_per_proc']),
+                        'efficiency': float(row['efficiency'])
+                    })
         except FileNotFoundError:
             pass
         
@@ -204,14 +213,17 @@ class MultiNodeBenchmarkRunner:
                         'procs': r['procs'],
                         'time_us': f"{r['time_us']:.1f}" if isinstance(r['time_us'], float) else r['time_us'],
                         'gflops': f"{r['gflops']:.5f}" if isinstance(r['gflops'], float) else r['gflops'],
-                        'work_per_proc': r.get('work_per_proc', r['size'] // r['procs']),
+                        'work_per_proc': r.get('work_per_proc', r['size'] * r['size'] // r['procs']),
                         'efficiency': f"{r['efficiency']:.1f}" if isinstance(r['efficiency'], float) else r['efficiency']
                     })
             # Atomic rename - if we crash before this, old file is preserved
             os.rename(temp_path, 'weak_scaling_results.csv')
             print(f"\nUpdated weak_scaling_results.csv with {len(results)} total entries")
         except Exception as e:
-            # Clean up temp file on error
+            # Clean up temp file on error and log the error
+            print(f"\nERROR writing weak_scaling_results.csv: {e}")
+            import traceback
+            traceback.print_exc()
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
             raise e
